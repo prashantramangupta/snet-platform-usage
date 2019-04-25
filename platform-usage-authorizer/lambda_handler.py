@@ -11,25 +11,19 @@ def request_handler(event, context):
     try:
         path = event['path'].lower()
         data = None
-        if "/events" == path:
-            try:
-                payload_dict = event['headers']
-                print("Processing [" + str(path) + "] with body [" + str(payload_dict) + "]")
-                net_id = METRICS_NETWORK_ID
-                token_instance = Token(net_id)
-                data = token_instance.validate_token(daemon_id=payload_dict['x-daemonid'],
-                                                     token=payload_dict['x-token'])
-                response = get_lambda_authorizer_response_format(event=event, allow=data['validated'])
-            except Exception as e:
-                print(repr(e))
-                response = get_lambda_authorizer_response_format(event=event, allow=False)
-
-
+        if "/event" == path:
+            payload_dict = event['headers']
+            print("Processing [" + str(path) + "] with body [" + str(payload_dict) + "]")
+            net_id = METRICS_NETWORK_ID
+            token_instance = Token(net_id)
+            data = token_instance.validate_token(daemon_id=payload_dict['x-daemonid'],
+                                                 token=payload_dict['x-token'])
+        response = get_lambda_authorizer_response_format(event=event, allow=data.get('validated', False))
+        print(response)
+        return response
     except Exception as e:
-        response = get_response(500, {"status": "failed",
-                                      "error": repr(e)})
-
-    return response
+        print(repr(e))
+        return get_lambda_authorizer_response_format(event=event, allow=False)
 
 
 # Generate response JSON that API gateway expects from the lambda function

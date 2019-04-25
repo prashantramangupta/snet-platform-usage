@@ -1,6 +1,6 @@
 import json
 
-from token import Token
+from token_register import Token
 from constant import METRICS_NETWORK_ID
 from metrics import Metrics
 
@@ -17,13 +17,13 @@ def request_handler(event, context):
         if "/register" == path:
             token_instance = Token(net_id)
             data = token_instance.process_token(daemon_id=payload_dict['daemonId'])
-        elif "/events" == path:
+        elif "/event" == path:
             obj_metrics = Metrics(net_id=net_id)
             if payload_dict['type'] == 'request':
                 obj_metrics.handle_request_type(payload_dict)
             elif payload_dict['type'] == 'response':
                 obj_metrics.handle_response_type(payload_dict)
-            data = []
+            data = {}
 
         if data is None:
             response = get_response("400", {"status": "failed",
@@ -38,13 +38,13 @@ def request_handler(event, context):
                 data.pop('error')
                 response = get_response("200", {"status": "failed", "data": data, "error": error})
 
-
+        return response
     except Exception as e:
         response = get_response(500, {"status": "failed",
                                       "error": repr(e),
                                       "api": event['path'],
                                       "payload": payload_dict})
-    return response
+        return response
 
 
 def payload_check(payload, path):
