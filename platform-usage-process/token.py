@@ -33,15 +33,6 @@ class Token:
             result["token"] = token
         return result
 
-    def validate_token(self, daemon_id, token):
-        print("validate_token::daemon_id: ", daemon_id);
-        qry = "SELECT * FROM daemon_token WHERE daemon_id = %s and token = %s "
-        res = self.repo.execute(qry, [daemon_id, token])
-        if len(res) > 0:
-            return {'validated': True}
-        return {'validated': False}
-
-
     def daemon_id_exist(self, daemon_id):
         print("daemon_id_exist::daemon_id: ", daemon_id);
         qry = "SELECT * FROM daemon_token WHERE daemon_id = %s"
