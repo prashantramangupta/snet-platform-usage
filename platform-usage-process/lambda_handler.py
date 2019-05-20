@@ -2,6 +2,9 @@ import json
 
 from metrics import Metrics
 from register import Token
+from utils import Utils
+
+obj_util = Utils()
 
 
 def request_handler(event, context):
@@ -9,8 +12,9 @@ def request_handler(event, context):
         return get_response("400", {"status": "failed",
                                     "error": "Bad Request"})
     try:
-        path = event['path'].lower()
         data = None
+        payload_dict = None
+        path = event['path'].lower()
         payload_dict = payload_check(payload=event['body'], path=path)
         if "/register" == path:
             token_instance = Token()
@@ -24,7 +28,6 @@ def request_handler(event, context):
             data = {}
         else:
             return get_response(500, "Invalid URL path.")
-
 
         if data is None:
             response = get_response("400", {"status": "failed",
@@ -41,11 +44,13 @@ def request_handler(event, context):
 
         return response
     except Exception as e:
-        response = get_response(500, {"status": "failed",
-                                      "error": repr(e),
-                                      "api": event['path'],
-                                      "payload": payload_dict})
-        return response
+        err_msg = {"status": "failed",
+                   "error": repr(e),
+                   "api": event['path'],
+                   "payload": payload_dict,
+                   "type": "process"}
+        obj_util.report_slack(1, str(err_msg))
+        return get_response(500, err_msg)
 
 
 def payload_check(payload, path):

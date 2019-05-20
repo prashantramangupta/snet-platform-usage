@@ -2,28 +2,34 @@ import json
 import os
 
 from authorizer import Token
+from utils import Utils
 
+obj_util = Utils()
 
 def request_handler(event, context):
     if 'path' not in event:
         return get_response("400", {"status": "failed", "error": "Bad Request"})
     try:
-        path = event['path'].lower()
         data = None
+        payload_dict = None
+        path = event['path'].lower()
         if "/event" == path:
             payload_dict = event['headers']
             print("Processing [" + str(path) + "] with body [" + str(payload_dict) + "]")
             token_instance = Token()
             data = token_instance.validate_token(daemon_id=payload_dict['x-daemonid'],
                                                  token=payload_dict['x-token'])
-            print(data)
         else:
             return get_response(500, "Invalid URL path.")
-        response = get_lambda_authorizer_response_format(event=event, allow=data.get('validated', False))
-        return response
+        return get_lambda_authorizer_response_format(event=event, allow=data.get('validated', False))
     except Exception as e:
-        print(repr(e))
-        return get_lambda_authorizer_response_format(event=event, allow=False)
+        err_msg = {"status": "failed",
+                   "error": repr(e),
+                   "api": event['path'],
+                   "payload": payload_dict,
+                   "type": "authorize"}
+        obj_util.report_slack(1, str(err_msg))
+        return get_response(500, err_msg)
 
 
 # Generate response JSON that API gateway expects from the lambda function
